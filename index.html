@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Thai Orchid Scottsville POS</title>
+  <style>
+    body { font-family: monospace; padding: 20px; }
+    h1, h2, h3 { text-align: center; }
+    .center { text-align: center; }
+    .table-grid, .menu-list { margin-bottom: 20px; text-align: center; }
+    .table-grid button, .menu-list button, button {
+      margin: 5px; padding: 10px 20px; font-size: 16px; cursor: pointer;
+    }
+    .order-item { margin-bottom: 5px; }
+    .remove-btn {
+      margin-left: 10px;
+      color: red;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    #receipt {
+      margin-top: 30px;
+      font-family: monospace;
+      white-space: pre;
+      border: 1px dashed #999;
+      padding: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Thai Orchid Scottsville</h1>
+
+  <h2>Select Table</h2>
+  <div class="table-grid">
+    <button onclick="selectTable(1)">Table 1</button>
+    <button onclick="selectTable(2)">Table 2</button>
+    <button onclick="selectTable(3)">Table 3</button>
+    <button onclick="selectTable(4)">Table 4</button>
+  </div>
+
+  <h2>Select Menu for Table <span id="selected-table">?</span></h2>
+  <div class="menu-list">
+    <button onclick="addItem('Pad Thai', 12.99)">Pad Thai - $12.99</button>
+    <button onclick="addItem('Tom Yum Soup', 14.50)">Tom Yum Soup - $14.50</button>
+    <button onclick="addItem('Green Curry', 13.25)">Green Curry - $13.25</button>
+  </div>
+
+  <h3>Order for this Table</h3>
+  <ul id="order-list"></ul>
+  <p id="total-before-tax"></p>
+  <p id="tax-amount"></p>
+  <p id="total-with-tax" style="font-weight: bold;"></p>
+  <div class="center">
+    <button onclick="sendOrder()">Send to Kitchen</button>
+    <button onclick="showReceipt()">Print Receipt</button>
+  </div>
+
+  <div id="receipt"></div>
+
+  <script>
+    let selectedTable = null;
+    let orders = {};
+
+    function selectTable(tableNumber) {
+      selectedTable = tableNumber;
+      document.getElementById("selected-table").textContent = tableNumber;
+      renderOrder();
+    }
+
+    function addItem(item, price) {
+      if (!selectedTable) {
+        alert("Please select a table first.");
+        return;
+      }
+      if (!orders[selectedTable]) orders[selectedTable] = [];
+      orders[selectedTable].push({ item, price });
+      renderOrder();
+    }
+
+    function removeItem(index) {
+      if (selectedTable !== null && orders[selectedTable]) {
+        orders[selectedTable].splice(index, 1);
+        renderOrder();
+      }
+    }
+
+    function renderOrder() {
+      const orderList = document.getElementById("order-list");
+      const totalBeforeTaxElem = document.getElementById("total-before-tax");
+      const taxAmountElem = document.getElementById("tax-amount");
+      const totalWithTaxElem = document.getElementById("total-with-tax");
+
+      orderList.innerHTML = "";
+      let total = 0;
+
+      if (orders[selectedTable]) {
+        orders[selectedTable].forEach((order, index) => {
+          const li = document.createElement("li");
+          li.className = "order-item";
+          li.innerHTML = `${order.item} - $${order.price.toFixed(2)} <span class="remove-btn" onclick="removeItem(${index})">❌</span>`;
+          orderList.appendChild(li);
+          total += order.price;
+        });
+      }
+
+      const tax = total * 0.06;
+      const totalWithTax = total + tax;
+
+      totalBeforeTaxElem.textContent = `Subtotal: $${total.toFixed(2)}`;
+      taxAmountElem.textContent = `Tax (6%): $${tax.toFixed(2)}`;
+      totalWithTaxElem.textContent = `Total: $${totalWithTax.toFixed(2)}`;
+    }
+
+    function sendOrder() {
+      if (!selectedTable || !orders[selectedTable]?.length) {
+        alert("No orders to send.");
+        return;
+      }
+      alert(`Order sent for table ${selectedTable}!`);
+    }
+
+    function showReceipt() {
+      if (!selectedTable || !orders[selectedTable]?.length) {
+        alert("No orders to print.");
+        return;
+      }
+
+      const now = new Date();
+      const timeStr = now.toLocaleDateString("en-US") + " " + now.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' });
+
+      let receiptText = "      Thai Orchid Scottsville\n";
+      receiptText += "        Receipt Preview\n";
+      receiptText += "-------------------------------\n";
+      receiptText += `Table: ${selectedTable}\nTime: ${timeStr}\n\nItems:\n`;
+
+      let total = 0;
+      orders[selectedTable].forEach(order => {
+        const itemLine = order.item.padEnd(20, ' ').substring(0, 20);
+        receiptText += `${itemLine} $${order.price.toFixed(2)}\n`;
+        total += order.price;
+      });
+
+      const tax = total * 0.06;
+      const totalWithTax = total + tax;
+
+      receiptText += "-------------------------------\n";
+      receiptText += `Subtotal:           $${total.toFixed(2)}\n`;
+      receiptText += `Tax 6%:             $${tax.toFixed(2)}\n`;
+      receiptText += `Total Due:          $${totalWithTax.toFixed(2)}\n`;
+      receiptText += "-------------------------------\n";
+      receiptText += "Thank you for your order!\n";
+
+      const receiptDiv = document.getElementById("receipt");
+      receiptDiv.textContent = receiptText;
+      receiptDiv.style.display = "block";
+
+      setTimeout(() => {
+        window.print();
+      }, 300);
+    }
+  </script>
+</body>
+</html>
