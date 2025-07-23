@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Thai Orchid POS - 58mm Print-Only Receipt</title>
+  <style>
+    body { font-family: monospace; padding: 10px 10px 10px 20px; font-size: 12px; }
+    .table-grid, .menu-list { text-align: center; margin-bottom: 10px; }
+    button {
+      margin: 4px; padding: 8px 12px; font-size: 12px; cursor: pointer;
+    }
+    .order-item { margin-bottom: 3px; }
+    .remove-btn { margin-left: 8px; color: red; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2 style="text-align:center;">Thai Orchid Scottsville</h2>
+  <div class="table-grid">
+    <button onclick="selectTable(1)">Table 1</button>
+    <button onclick="selectTable(2)">Table 2</button>
+    <button onclick="selectTable(3)">Table 3</button>
+    <button onclick="selectTable(4)">Table 4</button>
+  </div>
+
+  <div class="menu-list">
+    <button onclick="addItem('Pad Thai', 12.99)">Pad Thai - $12.99</button>
+    <button onclick="addItem('Tom Yum Soup', 14.50)">Tom Yum Soup - $14.50</button>
+    <button onclick="addItem('Green Curry', 13.25)">Green Curry - $13.25</button>
+  </div>
+
+  <p>Order for Table <span id="selected-table">?</span></p>
+  <ul id="order-list"></ul>
+  <p id="total-before-tax"></p>
+  <p id="tax-amount"></p>
+  <p id="total-with-tax" style="font-weight: bold;"></p>
+
+  <div style="text-align:center;">
+    <button onclick="printReceipt()">🧾 Print Receipt</button>
+  </div>
+
+  <script>
+    let selectedTable = null;
+    let orders = {};
+
+    function selectTable(tableNumber) {
+      selectedTable = tableNumber;
+      document.getElementById("selected-table").textContent = tableNumber;
+      renderOrder();
+    }
+
+    function addItem(item, price) {
+      if (!selectedTable) {
+        alert("Please select a table first.");
+        return;
+      }
+      if (!orders[selectedTable]) orders[selectedTable] = [];
+      orders[selectedTable].push({ item, price });
+      renderOrder();
+    }
+
+    function removeItem(index) {
+      if (orders[selectedTable]) {
+        orders[selectedTable].splice(index, 1);
+        renderOrder();
+      }
+    }
+
+    function renderOrder() {
+      const orderList = document.getElementById("order-list");
+      const totalBeforeTaxElem = document.getElementById("total-before-tax");
+      const taxAmountElem = document.getElementById("tax-amount");
+      const totalWithTaxElem = document.getElementById("total-with-tax");
+
+      orderList.innerHTML = "";
+      let total = 0;
+
+      if (orders[selectedTable]) {
+        orders[selectedTable].forEach((order, index) => {
+          const li = document.createElement("li");
+          li.className = "order-item";
+          li.innerHTML = `${order.item} - $${order.price.toFixed(2)} <span class="remove-btn" onclick="removeItem(${index})">❌</span>`;
+          orderList.appendChild(li);
+          total += order.price;
+        });
+      }
+
+      const tax = total * 0.06;
+      const totalWithTax = total + tax;
+
+      totalBeforeTaxElem.textContent = `Subtotal: $${total.toFixed(2)}`;
+      taxAmountElem.textContent = `Tax (6%): $${tax.toFixed(2)}`;
+      totalWithTaxElem.textContent = `Total: $${totalWithTax.toFixed(2)}`;
+    }
+
+    function printReceipt() {
+      if (!selectedTable || !orders[selectedTable]?.length) {
+        alert("No orders to print.");
+        return;
+      }
+
+      const now = new Date();
+      const timeStr = now.toLocaleDateString("en-US") + " " +
+                      now.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' });
+
+      let receiptText = "     Thai Orchid Scottsville\n";
+      receiptText += "      OFFICIAL RECEIPT\n";
+      receiptText += "---------------------------\n";
+      receiptText += `Table: ${selectedTable}   ${timeStr}\n\n`;
+
+      let total = 0;
+      orders[selectedTable].forEach(order => {
+        const item = order.item.padEnd(18, ' ').substring(0, 18);
+        const price = `$${order.price.toFixed(2)}`;
+        receiptText += `${item}${price.padStart(9)}\n`;
+        total += order.price;
+      });
+
+      const tax = total * 0.06;
+      const totalWithTax = total + tax;
+
+      receiptText += "---------------------------\n";
+      receiptText += `Subtotal:${total.toFixed(2).padStart(18)}\n`;
+      receiptText += `Tax 6% :${tax.toFixed(2).padStart(18)}\n`;
+      receiptText += `Total Due:${totalWithTax.toFixed(2).padStart(16)}\n`;
+      receiptText += "---------------------------\n";
+      receiptText += "  Thank you! See you again 💛\n";
+
+      const popup = window.open('', 'receiptWindow', 'width=280,height=500');
+      popup.document.write(`<pre style="font-family: monospace; font-size:12px; padding-left:10px; margin:0;">${receiptText}</pre>`);
+      popup.document.title = "Print Receipt";
+      popup.document.close();
+      popup.focus();
+      popup.print();
+    }
+  </script>
+</body>
+</html>
